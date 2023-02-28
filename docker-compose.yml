@@ -1,9 +1,9 @@
-ersion: '2'
+version: '3.7'
+
 services:
   onlyoffice-documentserver:
-    build:
-      context: .
-    container_name: onlyoffice-documentserver
+    container_name: onlyoffice-document-server
+    image: onlyoffice/documentserver:latest
     depends_on:
       - onlyoffice-postgresql
       - onlyoffice-rabbitmq
@@ -19,18 +19,30 @@ services:
       #- JWT_SECRET=secret
       #- JWT_HEADER=Authorization
       #- JWT_IN_BODY=true
-    ports:
-      - '80:80'
-      - '443:443'
+
     stdin_open: true
     restart: always
     stop_grace_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.onlyoffice.rule=Host(`onlyoffice.wiesan.de`)"
+      - "traefik.http.routers.onlyoffice.entrypoints=http"
+      #- "traefik.http.routers.onlyoffice.tls.certresolver=http"
+      #- "traefik.http.routers.onlyoffice.tls=true"
+      - "traefik.http.routers.onlyoffice.middlewares=onlyoffice-headers"
+      - "traefik.http.services.onlyoffice.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+      ## Middleware definition
+      # Headers for onlyoffice, https://github.com/ONLYOFFICE/onlyoffice-nextcloud/issues/151
+      - "traefik.http.middlewares.onlyoffice-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.onlyoffice-headers.headers.accesscontrolalloworiginlist=*"
+    networks:
+      - proxy
     volumes:
-       - /var/www/onlyoffice/Data
-       - /var/log/onlyoffice
-       - /var/lib/onlyoffice/documentserver/App_Data/cache/files
-       - /var/www/onlyoffice/documentserver-example/public/files
-       - /usr/share/fonts
+       - /opt/containers/general_services/onlyoffice/data:/var/www/onlyoffice/Data
+       - /opt/containers/general_services/onlyoffice/log:/var/log/onlyoffice
+       - /opt/containers/general_services/onlyoffice/cache:/var/lib/onlyoffice/documentserver/App_Data/cache/files
        
   onlyoffice-rabbitmq:
     container_name: onlyoffice-rabbitmq
@@ -50,7 +62,11 @@ services:
     expose:
       - '5432'
     volumes:
-      - postgresql_data:/var/lib/postgresql
+      - /opt/containers/general_services/onlyoffice/postgresql_data:/var/lib/postgresql
 
-volumes:
-  postgresql_data:
+networks:
+  proxy:
+    external: true
+  onlyoffice:
+    external: true
+  
