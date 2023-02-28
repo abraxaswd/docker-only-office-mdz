@@ -24,6 +24,7 @@ services:
     restart: always
     stop_grace_period: 60s
     labels:
+      - "com.centurylinklabs.watchtower.enable=true"
       - "traefik.enable=true"
       - "traefik.http.routers.onlyoffice.rule=Host(`onlyoffice.wiesan.de`)"
       - "traefik.http.routers.onlyoffice.entrypoints=http"
@@ -53,6 +54,8 @@ services:
       - '5672'
     networks:
       - onlyoffice
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
   onlyoffice-postgresql:
     container_name: onlyoffice-postgresql
@@ -66,6 +69,8 @@ services:
       - onlyoffice
     volumes:
       - /opt/containers/general_services/onlyoffice/postgresql_data:/var/lib/postgresql
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
 
 networks:
   proxy:
